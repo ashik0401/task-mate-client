@@ -27,9 +27,7 @@ export default function Register() {
     setImageFile(file);
     setImageName(file.name);
     const reader = new FileReader();
-    reader.onload = () => {
-      setImagePreview(reader.result);
-    };
+    reader.onload = () => setImagePreview(reader.result);
     reader.readAsDataURL(file);
   };
 
@@ -51,7 +49,6 @@ export default function Register() {
     setLoading(true);
     setError(null);
     const { email, password, username } = data;
-
     let avatar_url = null;
     if (imageFile) {
       avatar_url = await uploadImageToImgbb();
@@ -71,11 +68,23 @@ export default function Register() {
       }
     });
 
-    setLoading(false);
     if (signUpError) {
       setError(signUpError.message);
+      setLoading(false);
       return;
     }
+
+    try {
+      await fetch("http://localhost:5000/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, avatar_url })
+      });
+    } catch (dbError) {
+      console.error("Failed to save user to MongoDB:", dbError);
+    }
+
+    setLoading(false);
     setEmailSent(true);
     toast.success("Signup successful! Please confirm your email.");
   };
@@ -102,10 +111,7 @@ export default function Register() {
         <form onSubmit={handleSubmit(onSubmit)} className="w-full flex flex-col items-center">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-20 h-20 rounded-full overflow-hidden border border-gray-300">
-              <img
-                src={imagePreview || "https://i.ibb.co.com/bjMzB512/User-Profile-PNG-High-Quality-Image.png"}
-                className="w-full h-full object-cover"
-              />
+              <img src={imagePreview || "https://i.ibb.co/bjMzB512/User-Profile-PNG-High-Quality-Image.png"} className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col">
               <label className="bg-gray-200 px-3 py-1 rounded cursor-pointer hover:bg-gray-300">
@@ -115,46 +121,15 @@ export default function Register() {
               {imageName && <span className="text-sm text-gray-600 mt-1">{imageName}</span>}
             </div>
           </div>
-          <input
-            type="text"
-            placeholder="Username"
-            {...formRegister("username", { required: "Username is required" })}
-            className="border p-3 rounded mb-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-          {errors.username && <p className="text-red-500 text-sm mb-2">{errors.username.message}</p>}
-          <input
-            type="email"
-            placeholder="Email"
-            {...formRegister("email", {
-              required: "Email is required",
-              pattern: { value: /\S+@\S+\.\S+/, message: "Invalid email address" },
-            })}
-            className="border p-3 rounded mb-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-          {errors.email && <p className="text-red-500 text-sm mb-2">{errors.email.message}</p>}
+          <input type="text" placeholder="Username" {...formRegister("username", { required: true })} className="border p-3 rounded mb-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400" />
+          <input type="email" placeholder="Email" {...formRegister("email", { required: true, pattern: /\S+@\S+\.\S+/ })} className="border p-3 rounded mb-2 w-full focus:outline-none focus:ring-2 focus:ring-green-400" />
           <div className="relative w-full mb-2">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              {...formRegister("password", {
-                required: "Password is required",
-                pattern: {
-                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/,
-                  message: "Password must be 8+ chars, include upper, lower, number, special char",
-                },
-              })}
-              className="border p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-400 pr-10"
-            />
+            <input type={showPassword ? "text" : "password"} placeholder="Password" {...formRegister("password", { required: true, pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/ })} className="border p-3 rounded w-full focus:outline-none focus:ring-2 focus:ring-green-400 pr-10" />
             <span onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3.5 text-gray-500 cursor-pointer text-xl">
               {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
             </span>
           </div>
-          {errors.password && <p className="text-red-500 text-sm mb-2">{errors.password.message}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-green-500 text-white px-6 py-3 rounded w-full font-semibold cursor-pointer hover:bg-green-600 transition-colors mb-4"
-          >
+          <button type="submit" disabled={loading} className="bg-green-500 text-white px-6 py-3 rounded w-full font-semibold cursor-pointer hover:bg-green-600 transition-colors mb-4">
             {loading ? "Signing up..." : "Sign Up"}
           </button>
         </form>
@@ -165,10 +140,7 @@ export default function Register() {
         </div>
         <GoogleLoginButton onError={setError} />
         <p className="mt-4 text-gray-600">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="text-green-500 font-medium hover:underline">
-            Login
-          </Link>
+          Already have an account? <Link href="/auth/login" className="text-green-500 font-medium hover:underline">Login</Link>
         </p>
       </div>
     </div>

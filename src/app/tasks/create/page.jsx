@@ -10,6 +10,7 @@ export default function Create() {
   const router = useRouter();
   const supabase = createClientComponentClient();
   const [session, setSession] = useState(null);
+  const [users, setUsers] = useState([]);
 
   const { register, handleSubmit } = useForm({
     defaultValues: {
@@ -23,8 +24,25 @@ export default function Create() {
   });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-  }, []);
+    const fetchData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      if (!session) return;
+
+      const token = session.access_token;
+
+      try {
+        const res = await axios.get("http://localhost:5000/users", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUsers(res.data);
+      } catch (err) {
+        console.log(err);
+        toast.error("Failed to fetch users");
+      }
+    };
+    fetchData();
+  }, [supabase]);
 
   const onSubmit = async (data) => {
     if (!session) {
@@ -33,13 +51,13 @@ export default function Create() {
     }
     try {
       await axios.post("http://localhost:5000/tasks", data, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${session.access_token}` }
       });
       toast.success("Task created successfully!");
       router.push("/tasks");
     } catch (err) {
       console.log(err.response?.data || err.message);
-      toast.error("Failed to create task");
+      toast.error(err.response?.data?.error || "Failed to create task");
     }
   };
 
@@ -48,56 +66,26 @@ export default function Create() {
       <Toaster position="top-right" />
       <h2 className="text-2xl font-semibold mb-4 text-center">Create New Task</h2>
       <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
-        <input
-          type="text"
-          placeholder="Title"
-          {...register("title", { required: true })}
-          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-        <textarea
-          placeholder="Description"
-          {...register("description")}
-          rows={4}
-          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-        />
-        <select
-          {...register("priority")}
-          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
+        <input type="text" placeholder="Title" {...register("title", { required: true })} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500" />
+        <textarea placeholder="Description" {...register("description")} rows={4} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" />
+        <select {...register("priority")} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
           <option>Low</option>
           <option>Medium</option>
           <option>High</option>
         </select>
-        <select
-          {...register("status")}
-          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
+        <select {...register("status")} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
           <option>To Do</option>
           <option>In Progress</option>
           <option>Done</option>
         </select>
-        <select
-          {...register("assignedUser", { required: true })}
-          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
+        <select {...register("assignedUser", { required: true })} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
           <option value="">-- Assign to user --</option>
-          <option value="Alice">Alice</option>
-          <option value="Bob">Bob</option>
-          <option value="Charlie">Charlie</option>
-          <option value="David">David</option>
-          <option value="Eve">Eve</option>
+          {users.map(user => (
+            <option key={user._id} value={user._id}>{user.username}</option>
+          ))}
         </select>
-        <input
-          type="date"
-          {...register("dueDate", { required: true })}
-          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-        <button
-          type="submit"
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-all cursor-pointer"
-        >
-          Create Task
-        </button>
+        <input type="date" {...register("dueDate", { required: true })} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500" />
+        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-all cursor-pointer">Create Task</button>
       </form>
     </div>
   );
