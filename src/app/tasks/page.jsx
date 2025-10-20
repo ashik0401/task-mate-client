@@ -24,8 +24,8 @@ export default function TaskListPage() {
         setSession(currentSession || null); // null যদি লগইন না করে থাকে
         const config = { headers: currentSession ? { Authorization: `Bearer ${currentSession.access_token}` } : {} };
         const [tasksRes, usersRes] = await Promise.all([
-          axios.get("http://localhost:5000/tasks", config),
-          axios.get("http://localhost:5000/users", config)
+          axios.get("https://task-mate-server-kappa.vercel.app/tasks", config),
+          axios.get("https://task-mate-server-kappa.vercel.app/users", config)
         ]);
         setTasks(tasksRes.data);
         setFilteredTasks(tasksRes.data);

@@ -42,10 +42,10 @@ export default function UpdateTaskPage() {
         const token = currentSession.access_token;
 
         const [usersRes, taskRes] = await Promise.all([
-          axios.get("http://localhost:5000/users", {
+          axios.get("https://task-mate-server-kappa.vercel.app/users", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get(`http://localhost:5000/tasks/${id}`, {
+          axios.get(`https://task-mate-server-kappa.vercel.app/tasks/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
@@ -76,7 +76,7 @@ export default function UpdateTaskPage() {
       return;
     }
     try {
-      await axios.patch(`http://localhost:5000/tasks/${id}`, data, {
+      await axios.patch(`https://task-mate-server-kappa.vercel.app/tasks/${id}`, data, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       toast.success("Task updated successfully!");

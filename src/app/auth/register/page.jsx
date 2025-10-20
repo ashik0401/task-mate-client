@@ -77,7 +77,7 @@ export default function Register() {
     }
 
     try {
-      await fetch("http://localhost:5000/users", {
+      await fetch("https://task-mate-server-kappa.vercel.app/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, email, avatar_url })

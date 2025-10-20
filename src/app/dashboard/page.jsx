@@ -28,8 +28,8 @@ export default function Dashboard() {
           return;
         }
         const [tasksRes, usersRes] = await Promise.all([
-          axios.get("http://localhost:5000/tasks", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("http://localhost:5000/users", { headers: { Authorization: `Bearer ${token}` } })
+          axios.get("https://task-mate-server-kappa.vercel.app/tasks", { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get("https://task-mate-server-kappa.vercel.app/users", { headers: { Authorization: `Bearer ${token}` } })
         ]);
         setTasks(tasksRes.data);
         setFilteredTasks(tasksRes.data);
@@ -57,7 +57,7 @@ export default function Dashboard() {
         toast.error("You must be logged in");
         return;
       }
-      await axios.delete(`http://localhost:5000/tasks/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`https://task-mate-server-kappa.vercel.app/tasks/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
       setTasks(tasks.filter(t => t._id !== taskId));
       toast.success("Task deleted successfully!");
     } catch (err) {
