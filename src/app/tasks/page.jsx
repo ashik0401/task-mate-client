@@ -16,27 +16,48 @@ export default function TaskListPage() {
   const [priorityFilter, setPriorityFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      if (!session) return;
-      const token = session.access_token;
-      try {
-        const [tasksRes, usersRes] = await Promise.all([
-          axios.get("http://localhost:5000/tasks", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("http://localhost:5000/users", { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        setTasks(tasksRes.data);
-        setFilteredTasks(tasksRes.data);
-        setUsers(usersRes.data);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setLoading(false);
+  const fetchData = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        router.push("/auth/login");
+        return;
       }
-    };
+      setSession(session);
+      const token = session.access_token;
+      const config = {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+      const [tasksRes, usersRes] = await Promise.all([
+        axios.get("http://localhost:5000/tasks", config),
+        axios.get("http://localhost:5000/users", config)
+      ]);
+      setTasks(tasksRes.data);
+      setFilteredTasks(tasksRes.data);
+      setUsers(usersRes.data);
+    } catch (err) {
+      if (err.response?.status === 401) router.push("/auth/login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
+
+    const handleRefresh = () => {
+      console.log("Auto-refreshing task list...");
+      fetchData();
+    };
+
+    window.addEventListener('refreshTasks', handleRefresh);
+    
+    return () => {
+      window.removeEventListener('refreshTasks', handleRefresh);
+    };
   }, [supabase]);
 
   useEffect(() => {
@@ -46,8 +67,9 @@ export default function TaskListPage() {
     setFilteredTasks(tempTasks);
   }, [statusFilter, priorityFilter, tasks]);
 
-  const handleCreateClick = () => {
-    if (!session) router.push("/auth/login");
+  const handleCreateClick = async () => {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    if (!currentSession) router.push("/auth/login");
     else router.push("/tasks/create");
   };
 
@@ -60,7 +82,12 @@ export default function TaskListPage() {
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex flex-wrap justify-between items-start sm:items-center mb-4 gap-4">
         <h2 className="text-2xl font-semibold">All Tasks</h2>
-        <button onClick={handleCreateClick} className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded cursor-pointer">Create Task</button>
+        <button 
+          onClick={handleCreateClick} 
+          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
+        >
+          Create Task
+        </button>
       </div>
 
       <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-4">

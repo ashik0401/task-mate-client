@@ -58,7 +58,7 @@ export default function Navbar() {
 
   return (
     
-      <div className="navbar md:px-20 shadow-sm relative ">
+      <div className="navbar lg:px-20 shadow-sm relative ">
       <div className="navbar-start">
         <div className="dropdown">
           <div tabIndex={0} className="btn btn-ghost lg:hidden">
