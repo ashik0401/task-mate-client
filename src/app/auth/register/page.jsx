@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
@@ -6,10 +7,11 @@ import Link from "next/link";
 import GoogleLoginButton from "@/components/GoogleLoginButton";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { toast } from "react-hot-toast";
-import { createClient } from "@/app/utils/supabase/client";
+import { createClientInstance } from "@/app/utils/supabase/client";
+
 
 export default function Register() {
-  const supabase = createClient();
+  const supabase = createClientInstance();
   const router = useRouter();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);

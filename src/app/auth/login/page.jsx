@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
 import GoogleLoginButton from "@/components/GoogleLoginButton";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { createClientInstance } from "@/app/utils/supabase/client";
 
 export default function Login() {
-  const supabase = createClientComponentClient();
+  const supabase = createClientInstance();
   const router = useRouter();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -22,10 +23,7 @@ export default function Login() {
     setError(null);
     const { email, password } = data;
 
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
     setLoading(false);
     if (signInError) return setError(signInError.message);

@@ -2,14 +2,14 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useForm } from "react-hook-form";
 import { toast, Toaster } from "react-hot-toast";
+import { createClientInstance } from "@/app/utils/supabase/client";
 
 export default function UpdateTaskPage() {
   const { id } = useParams();
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createClientInstance();
   const [session, setSession] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,14 +28,18 @@ export default function UpdateTaskPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-        if (!session) {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        const currentSession = data.session;
+        setSession(currentSession);
+
+        if (!currentSession) {
           toast.error("Please login first");
           setLoading(false);
           return;
         }
-        const token = session.access_token;
+
+        const token = currentSession.access_token;
 
         const [usersRes, taskRes] = await Promise.all([
           axios.get("http://localhost:5000/users", {
@@ -64,7 +68,7 @@ export default function UpdateTaskPage() {
       }
     };
     fetchData();
-  }, [id, supabase, reset]);
+  }, [id, reset]);
 
   const onSubmit = async (data) => {
     if (!session) {
@@ -76,7 +80,7 @@ export default function UpdateTaskPage() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       toast.success("Task updated successfully!");
-      router.push("/tasks");
+      router.push("/dashboard");
     } catch (err) {
       console.log(err.response?.data || err.message);
       toast.error(err.response?.data?.error || "Failed to update task");

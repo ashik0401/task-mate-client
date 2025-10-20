@@ -1,13 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClientInstance } from "../utils/supabase/client";
 import { FiFilter } from "react-icons/fi";
 
 export default function TaskListPage() {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createClientInstance();
   const [session, setSession] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
@@ -16,61 +17,42 @@ export default function TaskListPage() {
   const [priorityFilter, setPriorityFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async () => {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error || !session) {
-        router.push("/auth/login");
-        return;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession || null); // null যদি লগইন না করে থাকে
+        const config = { headers: currentSession ? { Authorization: `Bearer ${currentSession.access_token}` } : {} };
+        const [tasksRes, usersRes] = await Promise.all([
+          axios.get("http://localhost:5000/tasks", config),
+          axios.get("http://localhost:5000/users", config)
+        ]);
+        setTasks(tasksRes.data);
+        setFilteredTasks(tasksRes.data);
+        setUsers(usersRes.data);
+      } catch {
+        setSession(null);
+      } finally {
+        setLoading(false);
       }
-      setSession(session);
-      const token = session.access_token;
-      const config = {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      };
-      const [tasksRes, usersRes] = await Promise.all([
-        axios.get("http://localhost:5000/tasks", config),
-        axios.get("http://localhost:5000/users", config)
-      ]);
-      setTasks(tasksRes.data);
-      setFilteredTasks(tasksRes.data);
-      setUsers(usersRes.data);
-    } catch (err) {
-      if (err.response?.status === 401) router.push("/auth/login");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => {
     fetchData();
-
-    const handleRefresh = () => {
-      console.log("Auto-refreshing task list...");
-      fetchData();
-    };
-
-    window.addEventListener('refreshTasks', handleRefresh);
-    
-    return () => {
-      window.removeEventListener('refreshTasks', handleRefresh);
-    };
-  }, [supabase]);
+  }, []);
 
   useEffect(() => {
-    let tempTasks = [...tasks];
-    if (statusFilter) tempTasks = tempTasks.filter(t => t.status === statusFilter);
-    if (priorityFilter) tempTasks = tempTasks.filter(t => t.priority === priorityFilter);
-    setFilteredTasks(tempTasks);
+    let temp = [...tasks];
+    if (statusFilter) temp = temp.filter(t => t.status === statusFilter);
+    if (priorityFilter) temp = temp.filter(t => t.priority === priorityFilter);
+    setFilteredTasks(temp);
   }, [statusFilter, priorityFilter, tasks]);
 
   const handleCreateClick = async () => {
-    const { data: { session: currentSession } } = await supabase.auth.getSession();
-    if (!currentSession) router.push("/auth/login");
-    else router.push("/tasks/create");
+    if (!session) {
+      router.push("/auth/login");
+      return;
+    }
+    router.push("/tasks/create");
   };
 
   const getUsername = (id) => {
@@ -79,15 +61,17 @@ export default function TaskListPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="lg:w-10/12 lg:mx-auto p-6">
       <div className="flex flex-wrap justify-between items-start sm:items-center mb-4 gap-4">
         <h2 className="text-2xl font-semibold">All Tasks</h2>
-        <button 
-          onClick={handleCreateClick} 
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
-        >
-          Create Task
-        </button>
+        {session && (
+          <button 
+            onClick={handleCreateClick} 
+            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+          >
+            Create Task
+          </button>
+        )}
       </div>
 
       <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-4">

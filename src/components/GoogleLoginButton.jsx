@@ -1,23 +1,31 @@
 "use client";
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";
+import { createClientInstance } from "@/app/utils/supabase/client";
 
-export default function GoogleLoginButton() {
-  const supabase = createClientComponentClient();
+
+export default function GoogleLoginButton({ onError }) {
+  const supabase = createClientInstance();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/` },
-    });
-    if (error) alert(error.message);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/` },
+      });
+      if (error && onError) onError(error.message);
+      else if (error) alert(error.message);
+    } catch (err) {
+      if (onError) onError(err.message);
+      else alert(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
