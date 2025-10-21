@@ -14,6 +14,7 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -40,11 +41,11 @@ export default function Navbar() {
 
           let message = "";
           if (payload.eventType === "INSERT") {
-            message = `Created task: "${payload.new.title}"`;
+            message = `Created task: "${payload.new.task_title}"`;
           } else if (payload.eventType === "UPDATE") {
-            message = `Updated task: "${payload.new.title}"`;
+            message = `Updated task: "${payload.new.task_title}"`;
           } else if (payload.eventType === "DELETE") {
-            message = `Deleted task: "${payload.old.title || 'Task'}"`;
+            message = `Deleted task: "${payload.old.task_title || 'Task'}"`;
           }
 
           setNotifications(prev => [
@@ -56,6 +57,10 @@ export default function Navbar() {
       .subscribe();
     return () => supabase.removeChannel(channel);
   }, [session?.user]);
+
+  useEffect(() => {
+    setUnreadCount(notifications.length);
+  }, [notifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -84,6 +89,7 @@ export default function Navbar() {
 
   const toggleNotifications = () => {
     setShowNotifications(!showNotifications);
+    if (!showNotifications) setUnreadCount(0);
   };
 
   const userImage = session?.user?.user_metadata?.avatar_url || "https://i.ibb.co/bjMzB512/User-Profile-PNG-High-Quality-Image.png";
@@ -120,7 +126,7 @@ export default function Navbar() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              {notifications.length > 0 && (
+              {unreadCount > 0 && (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
               )}
             </button>
