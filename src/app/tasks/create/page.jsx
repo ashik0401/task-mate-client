@@ -33,7 +33,7 @@ export default function Create() {
         if (!currentSession) return;
 
         const token = currentSession.access_token;
-        const res = await axios.get("https://task-mate-server-kappa.vercel.app/users", {
+        const res = await axios.get("http://localhost:5000/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUsers(res.data);
@@ -51,7 +51,7 @@ export default function Create() {
       return;
     }
     try {
-      await axios.post("https://task-mate-server-kappa.vercel.app/tasks", data, {
+      await axios.post("http://localhost:5000/tasks", data, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       toast.success("Task created successfully!");

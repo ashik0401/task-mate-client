@@ -21,11 +21,11 @@ export default function TaskListPage() {
     const fetchData = async () => {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession || null); // null যদি লগইন না করে থাকে
+        setSession(currentSession || null);
         const config = { headers: currentSession ? { Authorization: `Bearer ${currentSession.access_token}` } : {} };
         const [tasksRes, usersRes] = await Promise.all([
-          axios.get("https://task-mate-server-kappa.vercel.app/tasks", config),
-          axios.get("https://task-mate-server-kappa.vercel.app/users", config)
+          axios.get("http://localhost:5000/tasks", config),
+          axios.get("http://localhost:5000/users", config)
         ]);
         setTasks(tasksRes.data);
         setFilteredTasks(tasksRes.data);
@@ -36,7 +36,6 @@ export default function TaskListPage() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -47,7 +46,7 @@ export default function TaskListPage() {
     setFilteredTasks(temp);
   }, [statusFilter, priorityFilter, tasks]);
 
-  const handleCreateClick = async () => {
+  const handleCreateClick = () => {
     if (!session) {
       router.push("/auth/login");
       return;
@@ -64,14 +63,12 @@ export default function TaskListPage() {
     <div className="lg:w-10/12 lg:mx-auto p-6">
       <div className="flex flex-wrap justify-between items-start sm:items-center mb-4 gap-4">
         <h2 className="text-2xl font-semibold">All Tasks</h2>
-        {session && (
-          <button 
-            onClick={handleCreateClick} 
-            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-          >
-            Create Task
-          </button>
-        )}
+        <button 
+          onClick={handleCreateClick} 
+          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+        >
+          Create Task
+        </button>
       </div>
 
       <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-4">

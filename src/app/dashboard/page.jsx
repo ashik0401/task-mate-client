@@ -20,22 +20,13 @@ export default function Dashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (!token) {
-          toast.error("You must be logged in");
-          setLoading(false);
-          return;
-        }
-        const [tasksRes, usersRes] = await Promise.all([
-          axios.get("https://task-mate-server-kappa.vercel.app/tasks", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("https://task-mate-server-kappa.vercel.app/users", { headers: { Authorization: `Bearer ${token}` } })
-        ]);
+        const tasksRes = await axios.get("http://localhost:5000/tasks");
+        const usersRes = await axios.get("http://localhost:5000/users");
         setTasks(tasksRes.data);
         setFilteredTasks(tasksRes.data);
         setUsers(usersRes.data);
       } catch {
-        toast.error("Failed to fetch tasks");
+        toast.error("Failed to fetch tasks or users");
       } finally {
         setLoading(false);
       }
@@ -57,7 +48,7 @@ export default function Dashboard() {
         toast.error("You must be logged in");
         return;
       }
-      await axios.delete(`https://task-mate-server-kappa.vercel.app/tasks/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`http://localhost:5000/tasks/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
       setTasks(tasks.filter(t => t._id !== taskId));
       toast.success("Task deleted successfully!");
     } catch (err) {
@@ -71,7 +62,7 @@ export default function Dashboard() {
     <div className="lg:mx-auto lg:w-10/12 p-4 sm:p-6">
       <Toaster position="top-right" />
       <div className="flex flex-wrap sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-        <h2 className="text-2xl sm:text-3xl font-semibold text-center sm:text-left">My Tasks</h2>
+        <h2 className="text-2xl sm:text-3xl font-semibold text-center sm:text-left">All Tasks</h2>
         <div className="flex items-center gap-2">
           <FiFilter className="text-gray-600" />
           <select
@@ -114,7 +105,14 @@ export default function Dashboard() {
                   <td className="px-3 sm:px-6 py-2 text-sm sm:text-base whitespace-nowrap">{task.dueDate?.split("T")[0] || ""}</td>
                   <td className="px-3 sm:px-6 py-2 flex items-center justify-center gap-2">
                     <button
-                      onClick={() => router.push(`/tasks/update/${task._id}`)}
+                      onClick={async () => {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (!session) {
+                          router.push("/auth/login");
+                          return;
+                        }
+                        router.push(`/tasks/update/${task._id}`);
+                      }}
                       className="bg-gradient-to-r from-green-400 to-blue-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded cursor-pointer"
                     >
                       Update

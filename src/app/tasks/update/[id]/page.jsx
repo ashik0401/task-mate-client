@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
@@ -27,27 +28,15 @@ export default function UpdateTaskPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        const currentSession = data.session;
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         setSession(currentSession);
-
-        if (!currentSession) {
-          toast.error("Please login first");
-          setLoading(false);
-          return;
-        }
-
-        const token = currentSession.access_token;
+        const token = currentSession?.access_token;
 
         const [usersRes, taskRes] = await Promise.all([
-          axios.get("https://task-mate-server-kappa.vercel.app/users", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`https://task-mate-server-kappa.vercel.app/tasks/${id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          axios.get("http://localhost:5000/users", token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
+          axios.get(`http://localhost:5000/tasks/${id}`, token ? { headers: { Authorization: `Bearer ${token}` } } : {})
         ]);
 
         setUsers(usersRes.data);
@@ -62,7 +51,7 @@ export default function UpdateTaskPage() {
         });
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load task details");
+        toast.error("Failed to load task details. Make sure you are logged in.");
       } finally {
         setLoading(false);
       }
@@ -76,7 +65,7 @@ export default function UpdateTaskPage() {
       return;
     }
     try {
-      await axios.patch(`https://task-mate-server-kappa.vercel.app/tasks/${id}`, data, {
+      await axios.patch(`http://localhost:5000/tasks/${id}`, data, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       toast.success("Task updated successfully!");
