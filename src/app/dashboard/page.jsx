@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -44,15 +43,12 @@ export default function Dashboard() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) {
-        toast.error("You must be logged in");
-        return;
-      }
+      if (!token) { toast.error("You must be logged in"); return; }
       await axios.delete(`https://task-mate-server-iota.vercel.app/tasks/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
       setTasks(tasks.filter(t => t._id !== taskId));
       toast.success("Task deleted successfully!");
-    } catch (err) {
-      toast.error(err.response?.data?.error || "Failed to delete task");
+    } catch {
+      toast.error("Failed to delete task");
     }
   };
 
@@ -65,11 +61,7 @@ export default function Dashboard() {
         <h2 className="text-2xl sm:text-3xl font-semibold text-center sm:text-left">All Tasks</h2>
         <div className="flex items-center gap-2">
           <FiFilter className="text-gray-600" />
-          <select
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-            className="border rounded px-3 py-1 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-          >
+          <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="border rounded px-3 py-1 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-green-500">
             <option value="">All Priority</option>
             <option value="Low">Low</option>
             <option value="Medium">Medium</option>
@@ -80,57 +72,31 @@ export default function Dashboard() {
       {loading ? (
         <div className="text-center py-10 text-gray-500 text-sm sm:text-base">Loading tasks...</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 border rounded-lg table-fixed">
+        <div className="overflow-x-auto bg-white shadow rounded-lg">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {["Title", "Description", "Priority", "Status", "Assigned User", "Due Date", "Actions"].map(h => (
-                  <th
-                    key={h}
-                    className="px-3 sm:px-6 py-2 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    {h}
-                  </th>
+                {["Title","Description","Priority","Status","Assigned User","Due Date","Actions"].map(h => (
+                  <th key={h} className="px-6 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredTasks.map(task => (
                 <tr key={task._id} className="hover:bg-gray-50">
-                  <td className="px-3 sm:px-6 py-2 text-sm sm:text-base truncate max-w-[150px]" title={task.title}>{task.title}</td>
-                  <td className="px-3 sm:px-6 py-2 text-sm sm:text-base truncate max-w-[250px]" title={task.description}>{task.description}</td>
-                  <td className="px-3 sm:px-6 py-2 text-sm sm:text-base">{task.priority}</td>
-                  <td className="px-3 sm:px-6 py-2 text-sm sm:text-base whitespace-nowrap">{task.status}</td>
-                  <td className="px-3 sm:px-6 py-2 text-sm sm:text-base whitespace-nowrap">{getUsername(task.assignedUser)}</td>
-                  <td className="px-3 sm:px-6 py-2 text-sm sm:text-base whitespace-nowrap">{task.dueDate?.split("T")[0] || ""}</td>
-                  <td className="px-3 sm:px-6 py-2 flex items-center justify-center gap-2">
-                    <button
-                      onClick={async () => {
-                        const { data: { session } } = await supabase.auth.getSession();
-                        if (!session) {
-                          router.push("/auth/login");
-                          return;
-                        }
-                        router.push(`/tasks/update/${task._id}`);
-                      }}
-                      className="bg-gradient-to-r from-green-400 to-blue-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded cursor-pointer"
-                    >
-                      Update
-                    </button>
-                    <button
-                      onClick={() => handleDelete(task._id)}
-                      className="bg-red-500 text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded cursor-pointer"
-                    >
-                      Delete
-                    </button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{task.title}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{task.description}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{task.priority}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{task.status}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{getUsername(task.assignedUser)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{task.dueDate?.split("T")[0]}</td>
+                  <td className="px-6 py-4 whitespace-nowrap flex gap-2">
+                    <button onClick={() => router.push(`/tasks/update/${task._id}`)} className="text-blue-600 hover:text-blue-800">Edit</button>
+                    <button onClick={() => handleDelete(task._id)} className="text-red-600 hover:text-red-800">Delete</button>
                   </td>
                 </tr>
               ))}
-              {filteredTasks.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="text-center py-4 text-gray-500 text-sm sm:text-base">No tasks found</td>
-                </tr>
-              )}
+              {filteredTasks.length === 0 && <tr><td colSpan={7} className="text-center py-4 text-gray-500">No tasks found</td></tr>}
             </tbody>
           </table>
         </div>

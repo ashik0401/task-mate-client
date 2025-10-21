@@ -70,7 +70,6 @@ export default function TaskListPage() {
           Create Task
         </button>
       </div>
-
       <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-4">
         <div className="flex flex-wrap sm:flex-row gap-2 items-center">
           <div className="flex items-center gap-1">
@@ -93,7 +92,6 @@ export default function TaskListPage() {
           </div>
         </div>
       </div>
-
       {loading ? (
         <div className="text-center py-10 text-gray-500">Loading tasks...</div>
       ) : (
