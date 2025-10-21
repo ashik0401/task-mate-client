@@ -37,13 +37,18 @@ export default function Navbar() {
         { event: '*', schema: 'public', table: 'task_events' },
         (payload) => {
           if (payload.new?.user_id === session.user.id) return;
-          const title = payload.new?.task_title || payload.old?.task_title || "Task Updated";
+
+          let message = "";
+          if (payload.eventType === "INSERT") {
+            message = `Created task: "${payload.new.title}"`;
+          } else if (payload.eventType === "UPDATE") {
+            message = `Updated task: "${payload.new.title}"`;
+          } else if (payload.eventType === "DELETE") {
+            message = `Deleted task: "${payload.old.title || 'Task'}"`;
+          }
+
           setNotifications(prev => [
-            {
-              action: payload.eventType,
-              title,
-              time: new Date().toLocaleTimeString()
-            },
+            { id: Date.now(), message },
             ...prev
           ]);
         }
@@ -127,10 +132,9 @@ export default function Navbar() {
                   <p className="text-sm text-gray-500">No notifications</p>
                 ) : (
                   <ul>
-                    {notifications.map((n, i) => (
-                      <li key={i} className="border-b last:border-none py-1 text-sm">
-                        <span className="font-medium">{n.action}</span> - {n.title}
-                        <span className="text-xs text-gray-400 ml-2">{n.time}</span>
+                    {notifications.map((n) => (
+                      <li key={n.id} className="border-b last:border-none py-1 text-sm">
+                        {n.message}
                       </li>
                     ))}
                   </ul>
