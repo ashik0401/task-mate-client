@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
@@ -28,15 +27,27 @@ export default function UpdateTaskPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        const currentSession = data.session;
         setSession(currentSession);
-        const token = currentSession?.access_token;
+
+        if (!currentSession) {
+          toast.error("Please login first");
+          setLoading(false);
+          return;
+        }
+
+        const token = currentSession.access_token;
 
         const [usersRes, taskRes] = await Promise.all([
-          axios.get("http://localhost:5000/users", token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
-          axios.get(`http://localhost:5000/tasks/${id}`, token ? { headers: { Authorization: `Bearer ${token}` } } : {})
+          axios.get("https://task-mate-server-iota.vercel.app/users", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`https://task-mate-server-iota.vercel.app/tasks/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
         setUsers(usersRes.data);
@@ -51,7 +62,7 @@ export default function UpdateTaskPage() {
         });
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load task details. Make sure you are logged in.");
+        toast.error("Failed to load task details");
       } finally {
         setLoading(false);
       }
@@ -65,7 +76,7 @@ export default function UpdateTaskPage() {
       return;
     }
     try {
-      await axios.patch(`http://localhost:5000/tasks/${id}`, data, {
+      await axios.patch(`https://task-mate-server-iota.vercel.app/tasks/${id}`, data, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       toast.success("Task updated successfully!");
@@ -85,26 +96,56 @@ export default function UpdateTaskPage() {
       <Toaster position="top-right" />
       <h2 className="text-2xl font-semibold mb-4 text-center">Update Task</h2>
       <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
-        <input type="text" placeholder="Title" {...register("title", { required: true })} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500" />
-        <textarea placeholder="Description" {...register("description")} rows={4} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500 resize-none" />
-        <select {...register("priority")} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
+        <input
+          type="text"
+          placeholder="Title"
+          {...register("title", { required: true })}
+          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+        <textarea
+          placeholder="Description"
+          {...register("description")}
+          rows={4}
+          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+        />
+        <select
+          {...register("priority")}
+          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
           <option>Low</option>
           <option>Medium</option>
           <option>High</option>
         </select>
-        <select {...register("status")} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
+        <select
+          {...register("status")}
+          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
           <option>To Do</option>
           <option>In Progress</option>
           <option>Done</option>
         </select>
-        <select {...register("assignedUser", { required: true })} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
+        <select
+          {...register("assignedUser", { required: true })}
+          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        >
           <option value="">-- Assign to user --</option>
           {users.map((user) => (
-            <option key={user._id} value={user._id}>{user.username}</option>
+            <option key={user._id} value={user._id}>
+              {user.username}
+            </option>
           ))}
         </select>
-        <input type="date" {...register("dueDate", { required: true })} className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500" />
-        <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-all cursor-pointer">Update Task</button>
+        <input
+          type="date"
+          {...register("dueDate", { required: true })}
+          className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
+        <button
+          type="submit"
+          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-all cursor-pointer"
+        >
+          Update Task
+        </button>
       </form>
     </div>
   );

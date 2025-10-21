@@ -20,8 +20,8 @@ export default function Dashboard() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const tasksRes = await axios.get("http://localhost:5000/tasks");
-        const usersRes = await axios.get("http://localhost:5000/users");
+        const tasksRes = await axios.get("https://task-mate-server-iota.vercel.app/tasks");
+        const usersRes = await axios.get("https://task-mate-server-iota.vercel.app/users");
         setTasks(tasksRes.data);
         setFilteredTasks(tasksRes.data);
         setUsers(usersRes.data);
@@ -48,7 +48,7 @@ export default function Dashboard() {
         toast.error("You must be logged in");
         return;
       }
-      await axios.delete(`http://localhost:5000/tasks/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`https://task-mate-server-iota.vercel.app/tasks/${taskId}`, { headers: { Authorization: `Bearer ${token}` } });
       setTasks(tasks.filter(t => t._id !== taskId));
       toast.success("Task deleted successfully!");
     } catch (err) {

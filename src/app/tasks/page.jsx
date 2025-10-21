@@ -24,8 +24,8 @@ export default function TaskListPage() {
         setSession(currentSession || null);
         const config = { headers: currentSession ? { Authorization: `Bearer ${currentSession.access_token}` } : {} };
         const [tasksRes, usersRes] = await Promise.all([
-          axios.get("http://localhost:5000/tasks", config),
-          axios.get("http://localhost:5000/users", config)
+          axios.get("https://task-mate-server-iota.vercel.app/tasks", config),
+          axios.get("https://task-mate-server-iota.vercel.app/users", config)
         ]);
         setTasks(tasksRes.data);
         setFilteredTasks(tasksRes.data);
