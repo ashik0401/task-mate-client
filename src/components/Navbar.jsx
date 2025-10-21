@@ -1,146 +1,98 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createClientInstance } from "../app/utils/supabase/client";
-
-const supabase = createClientInstance();
+import { useNotification } from "./Notification";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState(null);
+  const { notification, tasks } = useNotification();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notificationOpen, setNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [newCount, setNewCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef(null);
-  const notificationRef = useRef(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data?.user || null);
-    };
-    fetchUser();
-
-    const channel = supabase
-      .channel("meal_notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "meals" }, (payload) => {
-        setNotifications((prev) => [payload.new, ...prev]);
-        setNewCount((count) => count + 1);
-      })
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, []);
+  const session = tasks?.length > 0 ? tasks[0]?.user : null; 
+  const unreadCount = notification ? 1 : 0;
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    router.push("/login");
+    if (typeof window !== "undefined") localStorage.removeItem("supabase_token");
+    router.push("/");
   };
 
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
+  const handleDashboardClick = () => {
+    if (!session) router.push("/auth/login");
+    else router.push("/dashboard");
+  };
 
   const toggleNotifications = () => {
-    setNotificationOpen(!notificationOpen);
-    if (!notificationOpen) setNewCount(0);
+    setShowNotifications(!showNotifications);
   };
 
-  const handleMealClick = (mealId) => {
-    router.push(`/meal/${mealId}`);
-    setNotificationOpen(false);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target) &&
-        notificationRef.current &&
-        !notificationRef.current.contains(event.target)
-      ) {
-        setDropdownOpen(false);
-        setNotificationOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const userImage = session?.avatar_url || "https://i.ibb.co/bjMzB512/User-Profile-PNG-High-Quality-Image.png";
 
   return (
-    <nav className="bg-white shadow-md fixed top-0 left-0 w-full z-50">
-      <div className="container mx-auto flex justify-between items-center px-4 py-3">
-        <Link href="/" className="text-2xl font-bold text-gray-800">TaskMate</Link>
-        <div className="flex items-center space-x-4">
-          {user ? (
-            <>
-              <div className="relative" ref={notificationRef}>
-                <button onClick={toggleNotifications} className="relative">
-                  <span className="material-icons text-2xl">notifications</span>
-                  {newCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
-                      {newCount}
-                    </span>
-                  )}
-                </button>
-                {notificationOpen && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg p-2 z-50 max-h-96 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <p className="text-gray-500 text-center text-sm py-2">No new meals</p>
-                    ) : (
-                      notifications.map((meal) => (
-                        <div
-                          key={meal.id}
-                          onClick={() => handleMealClick(meal.id)}
-                          className="p-2 hover:bg-gray-100 cursor-pointer rounded"
-                        >
-                          <p className="text-sm font-medium">{meal.title}</p>
-                          <p className="text-xs text-gray-500">New meal added</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
+    <div className="shadow-sm">
+      <div className="navbar lg:w-10/12 lg:mx-auto relative">
+        <div className="navbar-start">
+          <a className="text-xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">TaskMate</a>
+        </div>
+
+        <div className="navbar-center hidden lg:flex">
+          <ul className="menu menu-horizontal px-1">
+            <li><Link href="/" className={pathname === "/" ? "underline font-bold" : ""}>Home</Link></li>
+            <li><Link href="/tasks" className={pathname === "/tasks" ? "underline font-bold" : ""}>Tasks</Link></li>
+          </ul>
+        </div>
+
+        <div className="navbar-end flex items-center space-x-4 pr-3" ref={dropdownRef}>
+          <div className="relative">
+            <button onClick={toggleNotifications} className="p-2 rounded-full bg-white border shadow hover:bg-gray-100 relative cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {unreadCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>}
+            </button>
+
+            {showNotifications && notification && (
+              <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-md p-3 border z-20 max-h-80 overflow-y-auto">
+                <p className="text-sm">{notification.message}</p>
               </div>
-              <div className="relative" ref={dropdownRef}>
-                <button onClick={toggleDropdown} className="flex items-center space-x-2">
-                  <img
-                    src={user.user_metadata?.avatar_url || "/default-avatar.png"}
-                    alt="User Avatar"
-                    className="w-8 h-8 rounded-full border"
-                  />
-                </button>
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg p-2 z-50">
-                    <p className="px-3 py-2 text-gray-700 text-sm truncate">
-                      {user.email}
-                    </p>
-                    <hr />
-                    <Link href="/profile" className="block px-3 py-2 text-sm hover:bg-gray-100">
-                      Profile
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
+            )}
+          </div>
+
+          <button className="hidden lg:block btn btn-sm md:btn-md rounded bg-gradient-to-r from-green-400 to-blue-500 text-white" onClick={handleDashboardClick}>
+            Dashboard
+          </button>
+
+          {session ? (
+            <div className="relative">
+              <img
+                src={userImage}
+                alt="User Profile"
+                className="w-10 h-10 rounded-full cursor-pointer border border-gray-300"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              />
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg py-2 z-20">
+                  <div className="px-4 py-2 border-b border-gray-200 text-sm">{session.email}</div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-200 cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
-            <Link href="/login" className="text-gray-700 hover:text-blue-500 font-medium">
+            <Link href="/auth/login" className="btn rounded transition border-none btn-sm md:btn-md bg-blue-500 text-white hover:bg-blue-600">
               Login
             </Link>
           )}
         </div>
       </div>
-    </nav>
+    </div>
   );
 }
