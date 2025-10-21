@@ -65,7 +65,7 @@ export default function TaskListPage() {
         <h2 className="text-2xl font-semibold">All Tasks</h2>
         <button 
           onClick={handleCreateClick} 
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
         >
           Create Task
         </button>

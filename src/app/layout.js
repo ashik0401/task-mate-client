@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} antialiased `}
       >
         <NotificationProvider>
-          <Toaster position="top-center" reverseOrder={false} />
+          <Toaster position="top-right" reverseOrder={false} />
           <Navbar />
           <div className="lg:10/12 lg:mx-auto">{children}</div>
         </NotificationProvider>

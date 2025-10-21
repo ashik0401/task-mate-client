@@ -64,7 +64,7 @@ export default function Create() {
 
   return (
     <div className="max-w-md mx-auto bg-white p-6 rounded shadow mt-10">
-      <Toaster position="top-right" />
+      
       <h2 className="text-2xl font-semibold mb-4 text-center">Create New Task</h2>
       <form className="flex flex-col gap-3" onSubmit={handleSubmit(onSubmit)}>
         <input
