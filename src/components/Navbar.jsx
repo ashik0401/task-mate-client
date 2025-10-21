@@ -36,6 +36,7 @@ export default function Navbar() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'task_events' },
         (payload) => {
+          if (payload.new?.user_id === session.user.id) return;
           const title = payload.new?.task_title || payload.old?.task_title || "Task Updated";
           setNotifications(prev => [
             {

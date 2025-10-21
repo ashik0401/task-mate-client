@@ -22,13 +22,11 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" data-theme="light">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased `}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NotificationProvider>
           <Toaster position="top-right" reverseOrder={false} />
           <Navbar />
-          <div className="lg:10/12 lg:mx-auto">{children}</div>
+          <div className="lg:w-10/12 lg:mx-auto">{children}</div>
         </NotificationProvider>
       </body>
     </html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { useEffect, useState, createContext, useContext } from "react";
 import { createClientInstance } from "../app/utils/supabase/client";
 
 const supabase = createClientInstance();
@@ -8,44 +8,64 @@ const NotificationContext = createContext();
 
 export function NotificationProvider({ children }) {
   const [notification, setNotification] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [session, setSession] = useState(null);
 
   useEffect(() => {
+    const fetchSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+    };
+    fetchSession();
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+    return () => subscription?.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const loadTasks = async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (!error && data) setTasks(data);
+    };
+    loadTasks();
+  }, []);
+
+  useEffect(() => {
+    if (!session?.user) return;
     const channel = supabase
-      .channel("global-task-events")
+      .channel("tasks-channel")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "task_events" },
+        { event: "*", schema: "public", table: "tasks" },
         (payload) => {
-          let message = "";
-          let type = "";
-
-          switch (payload.new.action) {
-            case "CREATE":
-              message = `${payload.new.performed_by} created: "${payload.new.task_title}"`;
-              type = "CREATE";
+          if (payload.new?.user_id === session.user.id) return;
+          switch (payload.eventType) {
+            case "INSERT":
+              setTasks(prev => [payload.new, ...prev]);
+              setNotification({ message: `🎯 New task: "${payload.new.title}"`, type: "CREATE", id: Date.now() });
               break;
             case "UPDATE":
-              message = `${payload.new.performed_by} updated: "${payload.new.task_title}"`;
-              type = "UPDATE";
+              setTasks(prev => prev.map(task => task.id === payload.new.id ? payload.new : task));
+              setNotification({ message: `✏️ Task updated: "${payload.new.title}"`, type: "UPDATE", id: Date.now() });
               break;
             case "DELETE":
-              message = `${payload.new.performed_by} deleted a task`;
-              type = "DELETE";
+              setTasks(prev => prev.filter(task => task.id !== payload.old.id));
+              setNotification({ message: `🗑️ Task deleted`, type: "DELETE", id: Date.now() });
               break;
           }
-
-          setNotification({ message, type, id: Date.now() });
-          window.dispatchEvent(new Event("refreshTasks"));
           setTimeout(() => setNotification(null), 5000);
         }
       )
       .subscribe();
-
     return () => supabase.removeChannel(channel);
-  }, []);
+  }, [session?.user]);
 
   return (
-    <NotificationContext.Provider value={{}}>
+    <NotificationContext.Provider value={{ notification, setNotification, tasks }}>
       {children}
       {notification && (
         <div className="fixed top-4 right-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-3 rounded-xl shadow-xl z-50" style={{ animation: "fade-in-right 0.3s ease-out forwards" }}>
