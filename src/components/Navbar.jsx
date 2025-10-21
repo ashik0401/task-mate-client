@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useNotification } from "@/components/Notification";
 import { createClientInstance } from "@/app/utils/supabase/client";
 
 const supabase = createClientInstance();
@@ -10,11 +11,9 @@ const supabase = createClientInstance();
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { notifications, unreadCount, toggleNotifications, isOpen } = useNotification();
   const [session, setSession] = useState(undefined);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -23,50 +22,18 @@ export default function Navbar() {
       setSession(session);
     };
     fetchSession();
+
     const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
     });
+
     return () => subscription?.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("tasks-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tasks" },
-        (payload) => {
-          const title = payload.new?.task_title || payload.old?.task_title || "Untitled Task";
-          let message = "";
-          let type = "";
-
-          if (payload.eventType === "INSERT") {
-            message = `🟢 "${title}" created`;
-            type = "create";
-          }
-          if (payload.eventType === "UPDATE") {
-            message = `🟡 "${title}" updated`;
-            type = "update";
-          }
-          if (payload.eventType === "DELETE") {
-            message = `🔴 "${title}" deleted`;
-            type = "delete";
-          }
-
-          setNotifications((prev) => [{ id: Date.now(), message, type }, ...prev]);
-          setUnreadCount((prev) => prev + 1);
-        }
-      )
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
   }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
-        setShowNotifications(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -79,14 +46,7 @@ export default function Navbar() {
     router.push("/auth/login");
   };
 
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications);
-    if (!showNotifications) setUnreadCount(0);
-  };
-
-  const userImage =
-    session?.user?.user_metadata?.avatar_url ||
-    "https://i.ibb.co/bjMzB512/User-Profile-PNG-High-Quality-Image.png";
+  const userImage = session?.user?.user_metadata?.avatar_url || "https://i.ibb.co/bjMzB512/User-Profile-PNG-High-Quality-Image.png";
 
   return (
     <div className="shadow-sm">
@@ -122,11 +82,9 @@ export default function Navbar() {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              )}
+              {unreadCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>}
             </button>
-            {showNotifications && (
+            {isOpen && (
               <div className="absolute right-0 mt-2 w-72 bg-white shadow-lg rounded-md p-3 border z-20 max-h-80 overflow-y-auto">
                 <div className="flex justify-between items-center mb-2">
                   <h2 className="text-sm font-semibold">Notifications</h2>
@@ -141,9 +99,7 @@ export default function Navbar() {
                 ) : (
                   <ul>
                     {notifications.map((n) => (
-                      <li key={n.id} className="border-b last:border-none py-1 text-sm">
-                        {n.message}
-                      </li>
+                      <li key={n.id} className="border-b last:border-none py-1 text-sm">{n.message}</li>
                     ))}
                   </ul>
                 )}
@@ -159,7 +115,6 @@ export default function Navbar() {
               >
                 Dashboard
               </button>
-
               <div className="relative">
                 <img
                   src={userImage}
@@ -169,9 +124,7 @@ export default function Navbar() {
                 />
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white shadow-lg rounded-lg py-2 z-20">
-                    <div className="px-4 py-2 border-b border-gray-200 text-sm">
-                      {session.user.email}
-                    </div>
+                    <div className="px-4 py-2 border-b border-gray-200 text-sm">{session.user.email}</div>
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-200 cursor-pointer"
