@@ -1,7 +1,7 @@
 "use client";
 
-import { createClientInstance } from "@/app/utils/supabase/client";
 import { createContext, useContext, useEffect, useState } from "react";
+import { createClientInstance } from "@/app/utils/supabase/client";
 
 const NotificationContext = createContext();
 
@@ -18,12 +18,20 @@ export const NotificationProvider = ({ children }) => {
         "postgres_changes",
         { event: "*", schema: "public", table: "tasks" },
         (payload) => {
-          const title = payload.new?.task_title || payload.old?.task_title || "Untitled Task";
+          const title =
+            payload.new?.task_title ||
+            payload.old?.task_title ||
+            "Untitled Task";
+
           let message = "";
 
-          if (payload.eventType === "INSERT") message = `🟢 ${title} — created`;
-          if (payload.eventType === "UPDATE") message = `🟡 ${title} — updated`;
-          if (payload.eventType === "DELETE") message = `🔴 ${title} — deleted`;
+          if (payload.eventType === "INSERT") {
+            message = `🟢 ${title} — created`;
+          } else if (payload.eventType === "UPDATE") {
+            message = `🟡 ${title} — updated`;
+          } else if (payload.eventType === "DELETE") {
+            message = `🔴 ${title} — deleted`;
+          }
 
           setNotifications((prev) => [{ id: Date.now(), message }, ...prev]);
           setUnreadCount((prev) => prev + 1);
@@ -34,7 +42,7 @@ export const NotificationProvider = ({ children }) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [supabase]);
 
   const toggleNotifications = () => {
     setIsOpen((prev) => !prev);
