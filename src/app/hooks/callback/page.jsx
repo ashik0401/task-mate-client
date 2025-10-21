@@ -11,10 +11,9 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       const { data: { session }, error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
-      if (error) return;
-      if (session) {
+      if (!error && session) {
         localStorage.setItem("supabase_token", session.access_token);
-        router.push("/tasks");
+        router.push("/");
       }
     };
     handleCallback();

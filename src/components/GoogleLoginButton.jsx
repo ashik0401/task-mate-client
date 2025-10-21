@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";
 import { createClientInstance } from "@/app/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function GoogleLoginButton({ onError }) {
   const supabase = createClientInstance();
@@ -13,7 +13,7 @@ export default function GoogleLoginButton({ onError }) {
   const handleLogin = async () => {
     try {
       setLoading(true);
-      const redirectUrl = process.env.NEXT_PUBLIC_BASE_URL + "/auth/login";
+      const redirectUrl = process.env.NEXT_PUBLIC_BASE_URL + "/auth/callback";
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: redirectUrl },
