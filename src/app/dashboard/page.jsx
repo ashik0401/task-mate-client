@@ -21,8 +21,12 @@ export default function Dashboard() {
       setLoading(true);
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        if (!session) {
+          router.push("/auth/login");
+          return;
+        }
+        const token = session.access_token;
+        const config = { headers: { Authorization: `Bearer ${token}` } };
 
         const [tasksRes, usersRes] = await Promise.all([
           axios.get("https://task-mate-server-iota.vercel.app/tasks", config),
@@ -35,9 +39,6 @@ export default function Dashboard() {
       } catch (err) {
         console.log(err);
         toast.error("Failed to fetch tasks or users");
-        setTasks([]);
-        setFilteredTasks([]);
-        setUsers([]);
       } finally {
         setLoading(false);
       }

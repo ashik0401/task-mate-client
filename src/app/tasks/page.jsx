@@ -3,13 +3,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { createClientInstance } from "../utils/supabase/client";
 import { FiFilter } from "react-icons/fi";
+import { createClientInstance } from "../utils/supabase/client";
 
 export default function TaskListPage() {
   const router = useRouter();
   const supabase = createClientInstance();
-  const [session, setSession] = useState(null);
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [users, setUsers] = useState([]);
@@ -21,9 +20,8 @@ export default function TaskListPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession || null);
-        const token = currentSession?.access_token;
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
         const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 
         const [tasksRes, usersRes] = await Promise.all([
@@ -36,8 +34,6 @@ export default function TaskListPage() {
         setUsers(usersRes.data);
       } catch (err) {
         console.log(err);
-        setTasks([]);
-        setFilteredTasks([]);
       } finally {
         setLoading(false);
       }
@@ -52,29 +48,12 @@ export default function TaskListPage() {
     setFilteredTasks(temp);
   }, [statusFilter, priorityFilter, tasks]);
 
-  const handleCreateClick = () => {
-    if (!session) {
-      router.push("/auth/login");
-      return;
-    }
-    router.push("/tasks/create");
-  };
-
-  const getUsername = (id) => {
-    const user = users.find(u => String(u._id) === String(id));
-    return user ? user.username : "Unassigned";
-  };
+  const getUsername = (id) => users.find(u => String(u._id) === String(id))?.username || "Unassigned";
 
   return (
     <div className="lg:w-10/12 lg:mx-auto p-6">
       <div className="flex flex-wrap justify-between items-start sm:items-center mb-4 gap-4">
         <h2 className="text-2xl font-semibold">All Tasks</h2>
-        <button 
-          onClick={handleCreateClick} 
-          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded cursor-pointer"
-        >
-          Create Task
-        </button>
       </div>
 
       <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-4">
@@ -122,7 +101,7 @@ export default function TaskListPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{t.priority}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{t.status}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{getUsername(t.assignedUser)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{t.dueDate?.split("T")[0]}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{t.dueDate?.split("T")[0] || ""}</td>
                 </tr>
               ))}
             </tbody>
