@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createClientInstance } from "../app/utils/supabase/client";
+import { createClientInstance } from "@/app/utils/supabase/client";
 
 const supabase = createClientInstance();
 
@@ -38,12 +38,22 @@ export default function Navbar() {
         (payload) => {
           const title = payload.new?.task_title || payload.old?.task_title || "Untitled Task";
           let message = "";
+          let type = "";
 
-          if (payload.eventType === "INSERT") message = `🟢 "${title}" created`;
-          if (payload.eventType === "UPDATE") message = `🟡 "${title}" updated`;
-          if (payload.eventType === "DELETE") message = `🔴 "${title}" deleted`;
+          if (payload.eventType === "INSERT") {
+            message = `🟢 "${title}" created`;
+            type = "create";
+          }
+          if (payload.eventType === "UPDATE") {
+            message = `🟡 "${title}" updated`;
+            type = "update";
+          }
+          if (payload.eventType === "DELETE") {
+            message = `🔴 "${title}" deleted`;
+            type = "delete";
+          }
 
-          setNotifications((prev) => [{ id: Date.now(), message }, ...prev]);
+          setNotifications((prev) => [{ id: Date.now(), message, type }, ...prev]);
           setUnreadCount((prev) => prev + 1);
         }
       )
