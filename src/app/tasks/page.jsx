@@ -19,19 +19,25 @@ export default function TaskListPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         setSession(currentSession || null);
-        const config = { headers: currentSession ? { Authorization: `Bearer ${currentSession.access_token}` } : {} };
+        const token = currentSession?.access_token;
+        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
         const [tasksRes, usersRes] = await Promise.all([
           axios.get("https://task-mate-server-iota.vercel.app/tasks", config),
           axios.get("https://task-mate-server-iota.vercel.app/users", config)
         ]);
+
         setTasks(tasksRes.data);
         setFilteredTasks(tasksRes.data);
         setUsers(usersRes.data);
-      } catch {
-        setSession(null);
+      } catch (err) {
+        console.log(err);
+        setTasks([]);
+        setFilteredTasks([]);
       } finally {
         setLoading(false);
       }
@@ -70,6 +76,7 @@ export default function TaskListPage() {
           Create Task
         </button>
       </div>
+
       <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 mb-4">
         <div className="flex flex-wrap sm:flex-row gap-2 items-center">
           <div className="flex items-center gap-1">
@@ -92,8 +99,11 @@ export default function TaskListPage() {
           </div>
         </div>
       </div>
+
       {loading ? (
         <div className="text-center py-10 text-gray-500">Loading tasks...</div>
+      ) : filteredTasks.length === 0 ? (
+        <div className="text-center py-10 text-gray-500">No tasks found</div>
       ) : (
         <div className="overflow-x-auto bg-white shadow rounded-lg">
           <table className="min-w-full divide-y divide-gray-200">
@@ -112,10 +122,9 @@ export default function TaskListPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{t.priority}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{t.status}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{getUsername(t.assignedUser)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{t.dueDate?.split("T")[0] || ""}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm sm:text-base">{t.dueDate?.split("T")[0]}</td>
                 </tr>
               ))}
-              {filteredTasks.length === 0 && <tr><td colSpan={6} className="text-center py-4 text-gray-500">No tasks found</td></tr>}
             </tbody>
           </table>
         </div>
