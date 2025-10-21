@@ -84,7 +84,6 @@ export default function Navbar() {
 
   const toggleNotifications = () => {
     setShowNotifications(!showNotifications);
-    if (notifications.length) setNotifications([]);
   };
 
   const userImage = session?.user?.user_metadata?.avatar_url || "https://i.ibb.co/bjMzB512/User-Profile-PNG-High-Quality-Image.png";
@@ -127,7 +126,14 @@ export default function Navbar() {
             </button>
             {showNotifications && (
               <div className="absolute right-0 mt-2 w-64 bg-white shadow-lg rounded-md p-3 border z-20 max-h-80 overflow-y-auto">
-                <h2 className="text-sm font-semibold mb-2">Notifications</h2>
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-sm font-semibold">Notifications</h2>
+                  {notifications.length > 0 && (
+                    <button onClick={() => setNotifications([])} className="text-xs text-blue-500 hover:underline">
+                      Clear All
+                    </button>
+                  )}
+                </div>
                 {notifications.length === 0 ? (
                   <p className="text-sm text-gray-500">No notifications</p>
                 ) : (
