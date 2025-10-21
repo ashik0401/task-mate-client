@@ -65,8 +65,8 @@ export default function Register() {
       password,
       options: {
         emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/login`,
-        data: { username, avatar_url }
-      }
+        data: { username, avatar_url },
+      },
     });
 
     if (signUpError) {
@@ -76,13 +76,13 @@ export default function Register() {
     }
 
     try {
-      await fetch("https://task-mate-server-kappa.vercel.app/users", {
+      await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, email, avatar_url })
+        body: JSON.stringify({ username, email, avatar_url }),
       });
     } catch (dbError) {
-      console.error("Failed to save user to MongoDB:", dbError);
+      console.error("Failed to save user to database:", dbError);
     }
 
     setLoading(false);
