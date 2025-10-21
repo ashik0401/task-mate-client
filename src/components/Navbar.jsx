@@ -29,34 +29,36 @@ export default function Navbar() {
     return () => subscription?.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!session?.user) return;
-    const channel = supabase
-      .channel('tasks-channel')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'task_events' },
-        (payload) => {
-          if (payload.new?.user_id === session.user.id) return;
+useEffect(() => {
+  if (!session?.user) return;
+  const channel = supabase
+    .channel('tasks-channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'task_events' },
+      (payload) => {
+        if (payload.new?.user_id === session.user.id) return;
 
-          let message = "";
-          if (payload.eventType === "INSERT") {
-            message = `Created task: "${payload.new.task_title}"`;
-          } else if (payload.eventType === "UPDATE") {
-            message = `Updated task: "${payload.new.task_title}"`;
-          } else if (payload.eventType === "DELETE") {
-            message = `Deleted task: "${payload.old.task_title || 'Task'}"`;
-          }
-
-          setNotifications(prev => [
-            { id: Date.now(), message },
-            ...prev
-          ]);
+        let message = '';
+        if (payload.eventType === 'INSERT') {
+          message = `Created task: "${payload.new?.task_title || 'Task'}"`;
+        } else if (payload.eventType === 'UPDATE') {
+          message = `Updated task: "${payload.new?.task_title || 'Task'}"`;
+        } else if (payload.eventType === 'DELETE') {
+          message = `Deleted task: "${payload.old?.task_title || 'Task'}"`;
         }
-      )
-      .subscribe();
-    return () => supabase.removeChannel(channel);
-  }, [session?.user]);
+
+        setNotifications(prev => [
+          { id: Date.now(), message },
+          ...prev
+        ]);
+      }
+    )
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+}, [session?.user]);
+
 
   useEffect(() => {
     setUnreadCount(notifications.length);
