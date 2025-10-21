@@ -9,7 +9,6 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { toast } from "react-hot-toast";
 import { createClientInstance } from "@/app/utils/supabase/client";
 
-
 export default function Register() {
   const supabase = createClientInstance();
   const router = useRouter();
@@ -21,7 +20,7 @@ export default function Register() {
   const [imagePreview, setImagePreview] = useState(null);
   const [imageName, setImageName] = useState("");
 
-  const { register: formRegister, handleSubmit, formState: { errors } } = useForm();
+  const { register: formRegister, handleSubmit } = useForm();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -65,7 +64,7 @@ export default function Register() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/login`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/login`,
         data: { username, avatar_url }
       }
     });

@@ -13,9 +13,7 @@ export default function GoogleLoginButton({ onError }) {
   const handleLogin = async () => {
     try {
       setLoading(true);
-      let redirectUrl = process.env.NODE_ENV === "development"
-        ? "http://localhost:3000/"
-        : process.env.NEXT_PUBLIC_BASE_URL;
+      let redirectUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000/";
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
