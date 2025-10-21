@@ -26,9 +26,7 @@ export default function RootLayout({ children }) {
         <NotificationProvider>
           <Toaster position="top-right" reverseOrder={false} />
           <Navbar />
-          <div className="">
-          {children}
-          </div>
+          <div>{children}</div>
         </NotificationProvider>
       </body>
     </html>

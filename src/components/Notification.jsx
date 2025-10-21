@@ -36,6 +36,7 @@ export function NotificationProvider({ children }) {
 
   useEffect(() => {
     if (!session?.user) return;
+
     const channel = supabase
       .channel("tasks-channel")
       .on(
@@ -43,24 +44,34 @@ export function NotificationProvider({ children }) {
         { event: "*", schema: "public", table: "tasks" },
         (payload) => {
           if (payload.new?.user_id === session.user.id) return;
+
+          let message = "";
+          let type = "";
+
           switch (payload.eventType) {
             case "INSERT":
               setTasks(prev => [payload.new, ...prev]);
-              setNotification({ message: `🎯 New task: "${payload.new.title}"`, type: "CREATE", id: Date.now() });
+              message = `🎯 Created task: "${payload.new?.task_title || "Untitled"}"`;
+              type = "CREATE";
               break;
             case "UPDATE":
               setTasks(prev => prev.map(task => task.id === payload.new.id ? payload.new : task));
-              setNotification({ message: `✏️ Task updated: "${payload.new.title}"`, type: "UPDATE", id: Date.now() });
+              message = `✏️ Updated task: "${payload.new?.task_title || "Untitled"}"`;
+              type = "UPDATE";
               break;
             case "DELETE":
               setTasks(prev => prev.filter(task => task.id !== payload.old.id));
-              setNotification({ message: `🗑️ Task deleted`, type: "DELETE", id: Date.now() });
+              message = `🗑️ Deleted task: "${payload.old?.task_title || "Untitled"}"`;
+              type = "DELETE";
               break;
           }
+
+          setNotification({ message, type, id: Date.now() });
           setTimeout(() => setNotification(null), 5000);
         }
       )
       .subscribe();
+
     return () => supabase.removeChannel(channel);
   }, [session?.user]);
 
